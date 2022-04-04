@@ -1,0 +1,19 @@
+// /** @file
+// Sample UEFI Application Reference EDKII Module.
+//
+// This is a shell application that moves a blue rectangle across the screen, just like a DVD logo.
+//
+// Copyright (c) 2016, Intel Corporation. All rights reserved.<BR>
+//
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+// **/
+
+/=#
+
+#langdef en-US "English"
+
+#string STR_SNAKE_OS_HELP_INFORMATION        #language en-US ""
+".TH SnakeOS 0 "An operating system to play the popular game Snake."\r\n"
+".SH NAME\r\n"
+"SnakeOS application.\r\n"

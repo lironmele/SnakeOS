@@ -1,0 +1,16 @@
+// /** @file
+// Sample UEFI Application Reference EDKII Module.
+//
+// This is a shell application that moves a blue rectangle across the screen, just like a DVD logo.
+//
+// Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
+//
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+// **/
+
+
+#string STR_MODULE_ABSTRACT             #language en-US "Sample UEFI Application Reference EDKII Module"
+
+#string STR_MODULE_DESCRIPTION          #language en-US "This is a shell application that moves a blue rectangle across the screen, just like a DVD logo."
+
