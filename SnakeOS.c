@@ -20,6 +20,10 @@
 
 // Simple Pointer Protocol
 #include <Protocol/SimplePointer.h>
+
+// Simple Text Input Protocol
+#include <Protocol/SimpleTextIn.h>
+
 //
 // String token ID of help message text.
 // Shell supports to find help message in the resource section of an application image if
@@ -32,6 +36,9 @@
 
 // GOP pointer
 EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
+
+// Simple Text Input Protocol pointer
+EFI_SIMPLE_TEXT_INPUT_PROTOCOL *sti;
 
 // GOP video buffer
 EFI_GRAPHICS_OUTPUT_BLT_PIXEL *vidbuf;
@@ -110,7 +117,7 @@ UefiMain(
   EFI_STATUS status;
   // EFI_GRAPHICS_OUTPUT_MODE_INFORMATION  *info;
   // UINTN SizeOfInfo, numModes, nativeMode;
-  UINTN numModes;
+  // UINTN numModes;
 
   // Locate the GOP protocol
   status = gBS->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL, (VOID **)&gop);
@@ -121,52 +128,83 @@ UefiMain(
     return EFI_UNSUPPORTED;
   }
 
-  // Get info param
-  numModes = gop->Mode->MaxMode;
-
-  // Change mode
-  gop->SetMode(gop, numModes);
-
-  EFI_GRAPHICS_OUTPUT_BLT_PIXEL white = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Blue = 255, .Green = 255, .Red = 255};
-  EFI_GRAPHICS_OUTPUT_BLT_PIXEL blue = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Blue = 255};
-
-  UINT32 width = gop->Mode->Info->HorizontalResolution;
-  UINT32 height = gop->Mode->Info->VerticalResolution;
-
-  // vidbuf = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *) gBS->AllocatePool(width*height*sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
-  status = gBS->AllocatePool(
-      EfiBootServicesData,
-      width * height * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL),
-      (VOID **)&vidbuf);
+  // Locate the STI protocol
+  status = gBS->LocateProtocol(&gEfiSimpleTextInProtocolGuid, NULL, (VOID **)&sti);
+  // Print error if not found
   if (EFI_ERROR(status))
   {
-    Print(L"Can't allocate pool.\n");
-    return status;
+    Print(L"CapsuleApp: NO Simple Text Input Protocol found is found.\n");
+    return EFI_UNSUPPORTED;
   }
-
-  int x = 100;
-  int y = 100;
-  int incX = width / 500;
-  int incY = height / 500;
-
-  Print(L"Started loop");
-
-  while (1)
+  else
   {
-    x += incX;
-    y += incY;
-
-    if (x + 50 > width || x < 1)
-      incX *= -1;
-    if (y + 50 > height || y < 1)
-      incY *= -1;
-
-    fill(white);
-
-    draw_rect(x, y, 50, 50, blue);
-
-    flip_display();
+    Print(L"Simple Text Input Found!\n");
   }
+
+  EFI_INPUT_KEY *key;
+
+  status = sti->Reset(sti, FALSE);
+  if (EFI_ERROR(status))
+  {
+    Print(L"Can't reset\n");
+  }
+
+  while (TRUE)
+  {
+    while (sti->ReadKeyStroke(sti, key) != EFI_SUCCESS)
+    {
+      continue;
+    }
+
+    Print(L"The key pressed is: " + key->UnicodeChar + '\n');
+  }
+
+  // // Get info param
+  // numModes = gop->Mode->MaxMode;
+
+  // // Change mode
+  // gop->SetMode(gop, numModes);
+
+  // EFI_GRAPHICS_OUTPUT_BLT_PIXEL white = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Blue = 255, .Green = 255, .Red = 255};
+  // EFI_GRAPHICS_OUTPUT_BLT_PIXEL blue = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Blue = 255};
+
+  // UINT32 width = gop->Mode->Info->HorizontalResolution;
+  // UINT32 height = gop->Mode->Info->VerticalResolution;
+
+  // // vidbuf = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *) gBS->AllocatePool(width*height*sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
+  // status = gBS->AllocatePool(
+  //     EfiBootServicesData,
+  //     width * height * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL),
+  //     (VOID **)&vidbuf);
+  // if (EFI_ERROR(status))
+  // {
+  //   Print(L"Can't allocate pool.\n");
+  //   return status;
+  // }
+
+  // int x = 100;
+  // int y = 100;
+  // int incX = width / 500;
+  // int incY = height / 500;
+
+  // Print(L"Started loop");
+
+  // while (1)
+  // {
+  //   x += incX;
+  //   y += incY;
+
+  //   if (x + 50 > width || x < 1)
+  //     incX *= -1;
+  //   if (y + 50 > height || y < 1)
+  //     incY *= -1;
+
+  //   fill(white);
+
+  //   draw_rect(x, y, 50, 50, blue);
+
+  //   flip_display();
+  // }
 
   return EFI_SUCCESS;
 }
