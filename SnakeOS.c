@@ -1,6 +1,6 @@
 /** @file
-
-  This is a shell application that moves a blue rectangle across the screen, just like a DVD logo.
+  An operating system whose purpose is to allow
+  the user to play the famous game "Snake".
 
   Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -21,9 +21,6 @@
 // Simple Pointer Protocol
 #include <Protocol/SimplePointer.h>
 
-// Simple Text Input Protocol
-#include <Protocol/SimpleTextIn.h>
-
 //
 // String token ID of help message text.
 // Shell supports to find help message in the resource section of an application image if
@@ -35,13 +32,13 @@
 // GLOBAL_REMOVE_IF_UNREFERENCED EFI_STRING_ID mStringHelpTokenId = STRING_TOKEN(STR_HELLO_WORLD_HELP_INFORMATION);
 
 // GOP pointer
-EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
-
-// Simple Text Input Protocol pointer
-EFI_SIMPLE_TEXT_INPUT_PROTOCOL *sti;
+static EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
 
 // GOP video buffer
 EFI_GRAPHICS_OUTPUT_BLT_PIXEL *vidbuf;
+
+// Simple Pointer Protocol pointer
+static EFI_SIMPLE_TEXT_INPUT_PROTOCOL *stip;
 
 EFI_STATUS draw_rect(UINT32 x, UINT32 y, UINT32 width, UINT32 height, EFI_GRAPHICS_OUTPUT_BLT_PIXEL pixel)
 {
@@ -95,29 +92,9 @@ UefiMain(
     IN EFI_HANDLE ImageHandle,
     IN EFI_SYSTEM_TABLE *SystemTable)
 {
-  /**UINT32  Index;
-
-  Index = 0;
-
-  //
-  // Three PCD type (FeatureFlag, UINT32 and String) are used as the sample.
-  //
-  if (FeaturePcdGet (PcdHelloWorldPrintEnable)) {
-    for (Index = 0; Index < PcdGet32 (PcdHelloWorldPrintTimes); Index++) {
-      //
-      // Use UefiLib Print API to print string to UEFI console
-      //
-      Print ((CHAR16 *)PcdGetPtr (PcdHelloWorldPrintString));
-    }
-  }**/
-
-  // Print(L"Liron Is The Best\n\n");
-
   // Define
   EFI_STATUS status;
-  // EFI_GRAPHICS_OUTPUT_MODE_INFORMATION  *info;
-  // UINTN SizeOfInfo, numModes, nativeMode;
-  // UINTN numModes;
+  UINTN numModes;
 
   // Locate the GOP protocol
   status = gBS->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL, (VOID **)&gop);
@@ -128,83 +105,82 @@ UefiMain(
     return EFI_UNSUPPORTED;
   }
 
-  // Locate the STI protocol
-  status = gBS->LocateProtocol(&gEfiSimpleTextInProtocolGuid, NULL, (VOID **)&sti);
-  // Print error if not found
+  // Get info param
+  numModes = gop->Mode->MaxMode;
+
+  // Change mode
+  gop->SetMode(gop, numModes);
+
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL black = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Red = 0, .Green = 0, .Blue = 0};
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL green = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Green = 255};
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL red = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Red = 255};
+
+  UINT32 width = gop->Mode->Info->HorizontalResolution;
+  UINT32 height = gop->Mode->Info->VerticalResolution;
+
+  status = gBS->AllocatePool(
+      EfiBootServicesData,
+      width * height * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL),
+      (VOID **)&vidbuf);
   if (EFI_ERROR(status))
   {
-    Print(L"CapsuleApp: NO Simple Text Input Protocol found is found.\n");
-    return EFI_UNSUPPORTED;
-  }
-  else
-  {
-    Print(L"Simple Text Input Found!\n");
+    Print(L"Can't allocate pool.\n");
+    return status;
   }
 
-  EFI_INPUT_KEY *key;
-
-  status = sti->Reset(sti, FALSE);
+  status = gBS->LocateProtocol(&gEfiSimpleTextInProtocolGuid, NULL, (VOID **)&stip);
   if (EFI_ERROR(status))
   {
-    Print(L"Can't reset\n");
+    Print(L"Can't get STIP pointer.\n");
+    return status;
   }
 
-  while (TRUE)
+  int x = 100;
+  int y = 100;
+  int incX = width / 100;
+  int incY = height / 100;
+
+  EFI_INPUT_KEY *inputKey;
+
+  Print(L"Started loop");
+
+  while (1)
   {
-    while (sti->ReadKeyStroke(sti, key) != EFI_SUCCESS)
-    {
-      continue;
-    }
+    fill(black);
 
-    Print(L"The key pressed is: " + key->UnicodeChar + '\n');
+    draw_rect(x, y, 25, 25, green);
+    draw_rect(x + 27, y, 25, 25, green);
+    draw_rect(x + 54, y, 25, 25, green);
+    draw_rect(x + 81, y, 25, 25, green);
+    draw_rect(x + 108, y, 25, 25, green);
+
+    draw_rect(300, 250, 25, 25, red);
+
+    flip_display();
+
+    if (EFI_ERROR(gBS->WaitForEvent(1, &stip->WaitForKey, 0)))
+      Print(L"Crossed an error");
+
+    stip->ReadKeyStroke(stip, inputKey);
+
+    if (inputKey->UnicodeChar == 'w' || inputKey->ScanCode == 0x01)
+      y -= incY;
+    else if (inputKey->UnicodeChar == 'a' || inputKey->ScanCode == 0x04)
+      x -= incX;
+    else if (inputKey->UnicodeChar == 's' || inputKey->ScanCode == 0x02)
+      y += incY;
+    else if (inputKey->UnicodeChar == 'd' || inputKey->ScanCode == 0x03)
+      x += incX;
+
+    if (x + 50 > width)
+      x = width - 50;
+    else if (x < 0)
+      x = 0;
+    else if (y + 50 > height)
+      y = height - 50;
+    else if (y < 0)
+      y = 0;
   }
-
-  // // Get info param
-  // numModes = gop->Mode->MaxMode;
-
-  // // Change mode
-  // gop->SetMode(gop, numModes);
-
-  // EFI_GRAPHICS_OUTPUT_BLT_PIXEL white = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Blue = 255, .Green = 255, .Red = 255};
-  // EFI_GRAPHICS_OUTPUT_BLT_PIXEL blue = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Blue = 255};
-
-  // UINT32 width = gop->Mode->Info->HorizontalResolution;
-  // UINT32 height = gop->Mode->Info->VerticalResolution;
-
-  // // vidbuf = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *) gBS->AllocatePool(width*height*sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
-  // status = gBS->AllocatePool(
-  //     EfiBootServicesData,
-  //     width * height * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL),
-  //     (VOID **)&vidbuf);
-  // if (EFI_ERROR(status))
-  // {
-  //   Print(L"Can't allocate pool.\n");
-  //   return status;
-  // }
-
-  // int x = 100;
-  // int y = 100;
-  // int incX = width / 500;
-  // int incY = height / 500;
-
-  // Print(L"Started loop");
-
-  // while (1)
-  // {
-  //   x += incX;
-  //   y += incY;
-
-  //   if (x + 50 > width || x < 1)
-  //     incX *= -1;
-  //   if (y + 50 > height || y < 1)
-  //     incY *= -1;
-
-  //   fill(white);
-
-  //   draw_rect(x, y, 50, 50, blue);
-
-  //   flip_display();
-  // }
 
   return EFI_SUCCESS;
 }
