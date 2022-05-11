@@ -1,5 +1,10 @@
 {
     "files.associations": {
-        "simpletextin.h": "c"
+        "simpletextin.h": "c",
+        "uefi.h": "c",
+        "pcdlib.h": "c",
+        "graphics.h": "c",
+        "snakeos.h": "c",
+        "setup.h": "c"
     }
 }

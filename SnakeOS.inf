@@ -31,6 +31,8 @@
 
 [Sources]
   SnakeOS.c
+  graphics.c
+  setup.c
   SnakeOSStr.uni
 
 [Packages]

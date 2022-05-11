@@ -7,85 +7,13 @@
 
 **/
 
-#include <Uefi.h>
-#include <Library/PcdLib.h>
-#include <Library/UefiLib.h>
-#include <Library/UefiApplicationEntryPoint.h>
-
-// Get gBS
-#include <Library/UefiBootServicesTableLib.h>
-
-// Graphics Output Protocol
-#include <Protocol/GraphicsOutput.h>
-
-// Simple Pointer Protocol
-#include <Protocol/SimplePointer.h>
-
-//
-// String token ID of help message text.
-// Shell supports to find help message in the resource section of an application image if
-// .MAN file is not found. This global variable is added to make build tool recognizes
-// that the help string is consumed by user and then build tool will add the string into
-// the resource section. Thus the application can use '-?' option to show help message in
-// Shell.
-//
-// GLOBAL_REMOVE_IF_UNREFERENCED EFI_STRING_ID mStringHelpTokenId = STRING_TOKEN(STR_HELLO_WORLD_HELP_INFORMATION);
-
-// GOP pointer
-static EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
+#include "SnakeOS.h"
+#include "graphics.h"
+#include "setup.h"
 
 // GOP video buffer
 EFI_GRAPHICS_OUTPUT_BLT_PIXEL *vidbuf;
 
-// Simple Pointer Protocol pointer
-static EFI_SIMPLE_TEXT_INPUT_PROTOCOL *stip;
-
-EFI_STATUS draw_rect(UINT32 x, UINT32 y, UINT32 width, UINT32 height, EFI_GRAPHICS_OUTPUT_BLT_PIXEL pixel)
-{
-  UINT32 location = y * gop->Mode->Info->HorizontalResolution + x;
-
-  for (int h = 0; h < height; h++)
-  {
-    for (int w = 0; w < width; w++)
-    {
-      vidbuf[location] = pixel;
-      location++;
-    }
-    location -= width;
-    location += gop->Mode->Info->HorizontalResolution;
-  }
-
-  return EFI_SUCCESS;
-}
-
-EFI_STATUS fill(EFI_GRAPHICS_OUTPUT_BLT_PIXEL pixel)
-{
-  UINT32 width = gop->Mode->Info->HorizontalResolution;
-  UINT32 height = gop->Mode->Info->VerticalResolution;
-  for (UINT32 i = 0; i < width * height; i++)
-  {
-    vidbuf[i] = pixel;
-  }
-
-  return EFI_SUCCESS;
-}
-
-EFI_STATUS flip_display()
-{
-  return gop->Blt(gop, vidbuf, EfiBltBufferToVideo, 0, 0, 0, 0, gop->Mode->Info->HorizontalResolution, gop->Mode->Info->VerticalResolution, 0);
-}
-
-/**
-  The user Entry Point for Application. The user code starts with this function
-  as the real entry point for the application.
-
-  @param[in] ImageHandle    The firmware allocated handle for the EFI image.
-  @param[in] SystemTable    A pointer to the EFI System Table.
-
-  @retval EFI_SUCCESS       The entry point is executed successfully.
-  @retval other             Some error occurs when executing this entry point.
-
-**/
 EFI_STATUS
 EFIAPI
 UefiMain(
@@ -94,29 +22,21 @@ UefiMain(
 {
   // Define
   EFI_STATUS status;
-  UINTN numModes;
 
-  // Locate the GOP protocol
-  status = gBS->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL, (VOID **)&gop);
-  // Print error if not found
+  Protocols *protocols;
+
+  status = get_protocols(&protocols);
   if (EFI_ERROR(status))
   {
-    Print(L"CapsuleApp: NO GOP is found.\n");
-    return EFI_UNSUPPORTED;
+    Print(L"Failed to load protocols. GOODBYE!");
+    return status;
   }
 
-  // Get info param
-  numModes = gop->Mode->MaxMode;
+  // Change display resolution to highest
+  protocols->gop->SetMode(protocols->gop, protocols->gop->Mode->MaxMode);
 
-  // Change mode
-  gop->SetMode(gop, numModes);
-
-  EFI_GRAPHICS_OUTPUT_BLT_PIXEL black = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Red = 0, .Green = 0, .Blue = 0};
-  EFI_GRAPHICS_OUTPUT_BLT_PIXEL green = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Green = 255};
-  EFI_GRAPHICS_OUTPUT_BLT_PIXEL red = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL){.Red = 255};
-
-  UINT32 width = gop->Mode->Info->HorizontalResolution;
-  UINT32 height = gop->Mode->Info->VerticalResolution;
+  UINT32 width = protocols->gop->Mode->Info->HorizontalResolution;
+  UINT32 height = protocols->gop->Mode->Info->VerticalResolution;
 
   status = gBS->AllocatePool(
       EfiBootServicesData,
@@ -125,13 +45,6 @@ UefiMain(
   if (EFI_ERROR(status))
   {
     Print(L"Can't allocate pool.\n");
-    return status;
-  }
-
-  status = gBS->LocateProtocol(&gEfiSimpleTextInProtocolGuid, NULL, (VOID **)&stip);
-  if (EFI_ERROR(status))
-  {
-    Print(L"Can't get STIP pointer.\n");
     return status;
   }
 
@@ -146,22 +59,16 @@ UefiMain(
 
   while (1)
   {
-    fill(black);
+    fill(protocols->gop, vidbuf, BLACK);
 
-    draw_rect(x, y, 25, 25, green);
-    draw_rect(x + 27, y, 25, 25, green);
-    draw_rect(x + 54, y, 25, 25, green);
-    draw_rect(x + 81, y, 25, 25, green);
-    draw_rect(x + 108, y, 25, 25, green);
+    draw_rect(protocols->gop, vidbuf, x, y, 25, 25, GREEN);
 
-    draw_rect(300, 250, 25, 25, red);
+    flip_display(protocols->gop, vidbuf);
 
-    flip_display();
-
-    if (EFI_ERROR(gBS->WaitForEvent(1, &stip->WaitForKey, 0)))
+    if (EFI_ERROR(gBS->WaitForEvent(1, &(protocols->stip->WaitForKey), 0)))
       Print(L"Crossed an error");
 
-    stip->ReadKeyStroke(stip, inputKey);
+    protocols->stip->ReadKeyStroke(protocols->stip, inputKey);
 
     if (inputKey->UnicodeChar == 'w' || inputKey->ScanCode == 0x01)
       y -= incY;
