@@ -8,11 +8,12 @@
 **/
 
 #include "SnakeOS.h"
-#include "graphics.h"
-#include "setup.h"
 
 // GOP video buffer
 EFI_GRAPHICS_OUTPUT_BLT_PIXEL *vidbuf;
+
+// Direction
+enum Directions direction;
 
 EFI_STATUS
 EFIAPI
@@ -24,11 +25,18 @@ UefiMain(
   EFI_STATUS status;
 
   Protocols *protocols;
-
   status = get_protocols(&protocols);
   if (EFI_ERROR(status))
   {
-    Print(L"Failed to load protocols. GOODBYE!");
+    Print(L"Failed to load protocols. GOODBYE!\n");
+    return status;
+  }
+
+  Game *game;
+  status = setup_game(&game);
+  if (EFI_ERROR(status))
+  {
+    Print(L"Faild to setup the game. GOODBYE!\n");
     return status;
   }
 
@@ -44,49 +52,40 @@ UefiMain(
       (VOID **)&vidbuf);
   if (EFI_ERROR(status))
   {
-    Print(L"Can't allocate pool.\n");
+    Print(L"Can't allocate pool for video buffer.\n");
     return status;
   }
 
-  int x = 100;
-  int y = 100;
-  int incX = width / 100;
-  int incY = height / 100;
-
   EFI_INPUT_KEY *inputKey;
 
-  Print(L"Started loop");
+  Print(L"Started loop\n");
 
   while (1)
   {
-    fill(protocols->gop, vidbuf, BLACK);
-
-    draw_rect(protocols->gop, vidbuf, x, y, 25, 25, GREEN);
-
-    flip_display(protocols->gop, vidbuf);
+    paint_board(protocols->gop, vidbuf, game, width, width);
 
     if (EFI_ERROR(gBS->WaitForEvent(1, &(protocols->stip->WaitForKey), 0)))
-      Print(L"Crossed an error");
+      Print(L"Crossed an error\n");
 
     protocols->stip->ReadKeyStroke(protocols->stip, inputKey);
 
     if (inputKey->UnicodeChar == 'w' || inputKey->ScanCode == 0x01)
-      y -= incY;
+      --game->head->y;
     else if (inputKey->UnicodeChar == 'a' || inputKey->ScanCode == 0x04)
-      x -= incX;
+      --game->head->x;
     else if (inputKey->UnicodeChar == 's' || inputKey->ScanCode == 0x02)
-      y += incY;
+      ++game->head->y;
     else if (inputKey->UnicodeChar == 'd' || inputKey->ScanCode == 0x03)
-      x += incX;
+      ++game->head->x;
 
-    if (x + 50 > width)
-      x = width - 50;
-    else if (x < 0)
-      x = 0;
-    else if (y + 50 > height)
-      y = height - 50;
-    else if (y < 0)
-      y = 0;
+    if (game->head->x > 24)
+      game->head->x = 24;
+    else if (game->head->x < 0)
+      game->head->x = 0;
+    else if (game->head->y > 24)
+      game->head->y = 24;
+    else if (game->head->y < 0)
+      game->head->y = 0;
   }
 
   return EFI_SUCCESS;

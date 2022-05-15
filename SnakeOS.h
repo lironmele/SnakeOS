@@ -10,6 +10,18 @@
 // Graphics Output Protocol
 #include <Protocol/GraphicsOutput.h>
 
+#ifndef Helpers_H
+#define Helpers_H
+#include "helpers.h"
+
+#endif
+
+#ifndef Graphics_H
+#define Graphics_H
+#include "graphics.h"
+
+#endif
+
 /**
   The user Entry Point for Application. The user code starts with this function
   as the real entry point for the application.
