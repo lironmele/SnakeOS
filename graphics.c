@@ -18,7 +18,7 @@ EFI_STATUS paint_board(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, EFI_GRAPHICS_OUTPUT_BL
     // paint body
     for (UINT32 i = 0; i < game->score; i++)
     {
-        draw_rect(gop, vidbuf, game->body[i]->x * width_pixel, game->body[i]->y * height_pixel, width_pixel, height_pixel, snake_color);
+        draw_rect(gop, vidbuf, game->body[i].x * width_pixel, game->body[i].y * height_pixel, width_pixel, height_pixel, snake_color);
     }
 
     // paint fruit

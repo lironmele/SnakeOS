@@ -35,7 +35,7 @@ VOID update_location(Game *game)
   {
     game->body[i] = game->body[i - 1];
   }
-  game->body[0] = game->head;
+  game->body[0] = *game->head;
 
   switch (game->direction)
   {
@@ -75,7 +75,7 @@ VOID EFIAPI GameLoop(
       game->head->y == game->fruit->y)
   {
     ++game->score;
-    spawn_fruit(game->fruit);
+    spawn_fruit(game->fruit, &game->seed);
   }
 
   int x = game->head->x;
