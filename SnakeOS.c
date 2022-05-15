@@ -40,6 +40,9 @@ VOID EFIAPI GameLoop(
 
   paint_board(protocols->gop, vidbuf, game, width, height);
 
+  if (game->dead)
+    return;
+
   switch (game->direction)
   {
   case UP:
@@ -56,14 +59,19 @@ VOID EFIAPI GameLoop(
     break;
   }
 
-  if (game->head->x > 24)
-    game->head->x = 24;
-  else if (game->head->x < 0)
+  int x = game->head->x;
+  int y = game->head->y;
+  if (x < 0)
     game->head->x = 0;
-  else if (game->head->y > 24)
-    game->head->y = 24;
-  else if (game->head->y < 0)
+  else if (x > 24)
+    game->head->x = 24;
+  else if (y < 0)
     game->head->y = 0;
+  else if (y > 24)
+    game->head->y = 24;
+  else
+    return;
+  game->dead = TRUE;
 }
 
 EFI_STATUS

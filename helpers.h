@@ -35,6 +35,7 @@ enum Directions
 typedef struct
 {
     int score;
+    BOOLEAN dead;
     Pos *head;
     enum Directions direction;
     Pos *body[100];

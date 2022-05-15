@@ -76,6 +76,8 @@ EFI_STATUS setup_game(Game **game)
 
     setup_pos(&game_ptr->head);
 
+    game_ptr->dead = FALSE;
+
     game_ptr->direction = RIGHT;
 
     setup_pos(&game_ptr->fruit);
