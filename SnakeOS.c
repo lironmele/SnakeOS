@@ -12,8 +12,64 @@
 // GOP video buffer
 EFI_GRAPHICS_OUTPUT_BLT_PIXEL *vidbuf;
 
-// Direction
-enum Directions direction;
+VOID update_direction(enum Directions *direction, EFI_SIMPLE_TEXT_INPUT_PROTOCOL *stip, EFI_INPUT_KEY *inputKey)
+{
+
+  if (EFI_ERROR(gBS->WaitForEvent(1, &(stip->WaitForKey), 0)))
+    Print(L"Crossed an error\n");
+
+  stip->ReadKeyStroke(stip, inputKey);
+
+  if (inputKey->UnicodeChar == 'w' || inputKey->ScanCode == 0x01)
+    *direction = UP;
+  else if (inputKey->UnicodeChar == 'a' || inputKey->ScanCode == 0x04)
+    *direction = LEFT;
+  else if (inputKey->UnicodeChar == 's' || inputKey->ScanCode == 0x02)
+    *direction = DOWN;
+  else if (inputKey->UnicodeChar == 'd' || inputKey->ScanCode == 0x03)
+    *direction = RIGHT;
+
+  Print(L"Updated direction: %d\n", *direction);
+}
+
+VOID EFIAPI GameLoop(
+    IN EFI_EVENT Event,
+    IN VOID *Context)
+{
+  // Protocols *protocols = ((GameContext *)Context)->protocols;
+  Game *game = ((GameContext *)Context)->game;
+  // int width = ((GameContext *)Context)->width;
+  // int height = ((GameContext *)Context)->height;
+
+  // paint_board(protocols->gop, vidbuf, game, width, height);
+
+  switch (game->direction)
+  {
+  case UP:
+    --game->head->y;
+    break;
+  case LEFT:
+    --game->head->x;
+    break;
+  case DOWN:
+    ++game->head->y;
+    break;
+  case RIGHT:
+    ++game->head->x;
+    break;
+  }
+
+  if (game->head->x > 24)
+    game->head->x = 24;
+  else if (game->head->x < 0)
+    game->head->x = 0;
+  else if (game->head->y > 24)
+    game->head->y = 24;
+  else if (game->head->y < 0)
+    game->head->y = 0;
+
+  Print(L"Game loop direction: %d\n", game->direction);
+}
 
 EFI_STATUS
 EFIAPI
@@ -56,36 +112,39 @@ UefiMain(
     return status;
   }
 
+  Print(L"Started game loop\n");
+
+  GameContext *context;
+  gBS->AllocatePool(
+      EfiBootServicesData,
+      sizeof(GameContext),
+      (VOID **)&context);
+
+  context->game = game;
+  context->protocols = protocols;
+  context->width = width;
+  context->height = height;
+
+  gBS->CreateEvent(
+      EVT_TIMER | EVT_NOTIFY_SIGNAL,
+      TPL_NOTIFY,
+      GameLoop,
+      context,
+      &context->PeriodicTimer);
+
+  gBS->SetTimer(
+      context->PeriodicTimer,
+      TimerPeriodic,
+      EFI_TIMER_PERIOD_SECONDS(1));
+
   EFI_INPUT_KEY *inputKey;
-
-  Print(L"Started loop\n");
-
+  gBS->AllocatePool(
+      EfiBootServicesData,
+      sizeof(EFI_INPUT_KEY),
+      (VOID **)&inputKey);
   while (1)
   {
-    paint_board(protocols->gop, vidbuf, game, width, width);
-
-    if (EFI_ERROR(gBS->WaitForEvent(1, &(protocols->stip->WaitForKey), 0)))
-      Print(L"Crossed an error\n");
-
-    protocols->stip->ReadKeyStroke(protocols->stip, inputKey);
-
-    if (inputKey->UnicodeChar == 'w' || inputKey->ScanCode == 0x01)
-      --game->head->y;
-    else if (inputKey->UnicodeChar == 'a' || inputKey->ScanCode == 0x04)
-      --game->head->x;
-    else if (inputKey->UnicodeChar == 's' || inputKey->ScanCode == 0x02)
-      ++game->head->y;
-    else if (inputKey->UnicodeChar == 'd' || inputKey->ScanCode == 0x03)
-      ++game->head->x;
-
-    if (game->head->x > 24)
-      game->head->x = 24;
-    else if (game->head->x < 0)
-      game->head->x = 0;
-    else if (game->head->y > 24)
-      game->head->y = 24;
-    else if (game->head->y < 0)
-      game->head->y = 0;
+    update_direction(&game->direction, protocols->stip, inputKey);
   }
 
   return EFI_SUCCESS;

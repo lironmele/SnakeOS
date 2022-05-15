@@ -22,6 +22,18 @@
 
 #endif
 
+VOID update_direction(enum Directions *direction, EFI_SIMPLE_TEXT_INPUT_PROTOCOL *stip, EFI_INPUT_KEY *inputKey);
+
+typedef struct
+{
+  UINTN Signature;
+  EFI_EVENT PeriodicTimer;
+  Game *game;
+  Protocols *protocols;
+  UINT32 width;
+  UINT32 height;
+} GameContext;
+
 /**
   The user Entry Point for Application. The user code starts with this function
   as the real entry point for the application.
