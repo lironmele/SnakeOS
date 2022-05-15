@@ -13,7 +13,7 @@ EFI_STATUS paint_board(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, EFI_GRAPHICS_OUTPUT_BL
     fill(gop, vidbuf, WHITE);
 
     // paint head
-    draw_rect(gop, vidbuf, game->head->x * width_pixel, game->head->y * height_pixel, 50, 50, snake_color);
+    draw_rect(gop, vidbuf, game->head->x * width_pixel, game->head->y * height_pixel, width_pixel, height_pixel, snake_color);
 
     // paint body
     for (UINT32 i = 0; i < game->score; i++)
@@ -22,7 +22,7 @@ EFI_STATUS paint_board(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, EFI_GRAPHICS_OUTPUT_BL
     }
 
     // paint fruit
-    draw_rect(gop, vidbuf, game->fruit->x * width_pixel, game->fruit->y * height_pixel, 50, 50, RED);
+    draw_rect(gop, vidbuf, game->fruit->x * width_pixel, game->fruit->y * height_pixel, width_pixel, height_pixel, RED);
 
     // update the display
     flip_display(gop, vidbuf);
