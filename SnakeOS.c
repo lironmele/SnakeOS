@@ -29,19 +29,13 @@ VOID update_direction(enum Directions *direction, EFI_SIMPLE_TEXT_INPUT_PROTOCOL
     *direction = RIGHT;
 }
 
-VOID EFIAPI GameLoop(
-    IN EFI_EVENT Event,
-    IN VOID *Context)
+VOID update_location(Game *game)
 {
-  Protocols *protocols = ((GameContext *)Context)->protocols;
-  Game *game = ((GameContext *)Context)->game;
-  int width = ((GameContext *)Context)->width;
-  int height = ((GameContext *)Context)->height;
-
-  paint_board(protocols->gop, vidbuf, game, width, height);
-
-  if (game->dead)
-    return;
+  for (int i = game->score - 1; i > 0; i--)
+  {
+    game->body[i] = game->body[i - 1];
+  }
+  game->body[0] = game->head;
 
   switch (game->direction)
   {
@@ -57,6 +51,31 @@ VOID EFIAPI GameLoop(
   case RIGHT:
     ++game->head->x;
     break;
+  }
+}
+
+VOID EFIAPI GameLoop(
+    IN EFI_EVENT Event,
+    IN VOID *Context)
+{
+  Protocols *protocols = ((GameContext *)Context)->protocols;
+  Game *game = ((GameContext *)Context)->game;
+  int width = ((GameContext *)Context)->width;
+  int height = ((GameContext *)Context)->height;
+
+  paint_board(protocols->gop, vidbuf, game, width, height);
+
+  if (game->dead)
+    return;
+
+  update_location(game);
+
+  if (
+      game->head->x == game->fruit->x &&
+      game->head->y == game->fruit->y)
+  {
+    ++game->score;
+    spawn_fruit(game->fruit);
   }
 
   int x = game->head->x;

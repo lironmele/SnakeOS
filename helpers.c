@@ -32,14 +32,6 @@ EFI_STATUS get_protocols(Protocols **protocols)
         return status;
     }
 
-    // status = gBS->LocateProtocol(&gEfiRngProtocolGuid, NULL, (VOID **)(&((*protocols)->rng)));
-
-    // if (EFI_ERROR(status))
-    // {
-    //     Print(L"Can't get Random Number Generator Protocol pointer.\n");
-    //     return status;
-    // }
-
     Print(L"Got all protocols\n");
     return EFI_SUCCESS;
 }
@@ -122,10 +114,6 @@ int RandomInitSeed(VOID)
 
 void spawn_fruit(Pos *fruit_pos)
 {
-    // rng->GetRNG(rng, NULL, sizeof(int), (VOID *)&(fruit_pos->x));
-    // rng->GetRNG(rng, NULL, sizeof(int), (VOID *)&(fruit_pos->y));
-
-    // Print(L"Generate seed");
     fruit_pos->x = (RandomInitSeed() * 3) % 25;
     if (fruit_pos->x < 0)
     {
@@ -136,7 +124,4 @@ void spawn_fruit(Pos *fruit_pos)
     {
         fruit_pos->y *= -1;
     }
-
-    Print(L"x: %d y: %d", fruit_pos->x, fruit_pos->y);
-    Print(L"Generated");
 }
