@@ -14,9 +14,8 @@ EFI_GRAPHICS_OUTPUT_BLT_PIXEL *vidbuf;
 
 VOID update_direction(enum Directions *direction, EFI_SIMPLE_TEXT_INPUT_PROTOCOL *stip, EFI_INPUT_KEY *inputKey)
 {
-
-  if (EFI_ERROR(gBS->WaitForEvent(1, &(stip->WaitForKey), 0)))
-    Print(L"Crossed an error\n");
+  if (EFI_ERROR(gBS->CheckEvent(stip->WaitForKey)))
+    return;
 
   stip->ReadKeyStroke(stip, inputKey);
 
@@ -28,20 +27,18 @@ VOID update_direction(enum Directions *direction, EFI_SIMPLE_TEXT_INPUT_PROTOCOL
     *direction = DOWN;
   else if (inputKey->UnicodeChar == 'd' || inputKey->ScanCode == 0x03)
     *direction = RIGHT;
-
-  Print(L"Updated direction: %d\n", *direction);
 }
 
 VOID EFIAPI GameLoop(
     IN EFI_EVENT Event,
     IN VOID *Context)
 {
-  // Protocols *protocols = ((GameContext *)Context)->protocols;
+  Protocols *protocols = ((GameContext *)Context)->protocols;
   Game *game = ((GameContext *)Context)->game;
-  // int width = ((GameContext *)Context)->width;
-  // int height = ((GameContext *)Context)->height;
+  int width = ((GameContext *)Context)->width;
+  int height = ((GameContext *)Context)->height;
 
-  // paint_board(protocols->gop, vidbuf, game, width, height);
+  paint_board(protocols->gop, vidbuf, game, width, height);
 
   switch (game->direction)
   {
@@ -67,8 +64,6 @@ VOID EFIAPI GameLoop(
     game->head->y = 24;
   else if (game->head->y < 0)
     game->head->y = 0;
-
-  Print(L"Game loop direction: %d\n", game->direction);
 }
 
 EFI_STATUS
@@ -135,7 +130,7 @@ UefiMain(
   gBS->SetTimer(
       context->PeriodicTimer,
       TimerPeriodic,
-      EFI_TIMER_PERIOD_SECONDS(1));
+      EFI_TIMER_PERIOD_MILLISECONDS(125));
 
   EFI_INPUT_KEY *inputKey;
   gBS->AllocatePool(

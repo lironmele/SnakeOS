@@ -9,7 +9,7 @@ EFI_STATUS paint_board(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, EFI_GRAPHICS_OUTPUT_BL
     fill(gop, vidbuf, WHITE);
 
     // paint head
-    draw_rect(gop, vidbuf, game->head->x * width_pixel, game->head->y * height_pixel, width_pixel, height_pixel, GREEN);
+    draw_rect(gop, vidbuf, game->head->x * width_pixel, game->head->y * height_pixel, 50, 50, GREEN);
 
     // paint body
     for (UINT32 i = 0; i < game->score; i++)
@@ -18,7 +18,7 @@ EFI_STATUS paint_board(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, EFI_GRAPHICS_OUTPUT_BL
     }
 
     // paint fruit
-    draw_rect(gop, vidbuf, game->fruit->x * width_pixel, game->fruit->y * height_pixel, width_pixel, height_pixel, RED);
+    draw_rect(gop, vidbuf, game->fruit->x * width_pixel, game->fruit->y * height_pixel, 50, 50, RED);
 
     // update the display
     flip_display(gop, vidbuf);
@@ -28,7 +28,7 @@ EFI_STATUS paint_board(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, EFI_GRAPHICS_OUTPUT_BL
 
 EFI_STATUS draw_rect(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, EFI_GRAPHICS_OUTPUT_BLT_PIXEL *vidbuf, UINT32 x, UINT32 y, UINT32 width, UINT32 height, EFI_GRAPHICS_OUTPUT_BLT_PIXEL pixel)
 {
-    UINT32 location = y * gop->Mode->Info->VerticalResolution + x;
+    UINT32 location = y * gop->Mode->Info->HorizontalResolution + x;
 
     for (int h = 0; h < height; h++)
     {
