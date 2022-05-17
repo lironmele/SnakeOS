@@ -78,6 +78,16 @@ VOID EFIAPI GameLoop(
     spawn_fruit(game->fruit, &game->seed);
   }
 
+  for (int i = 0; i < game->score; i++)
+  {
+    if (game->head->x == game->body[i].x &&
+        game->head->y == game->body[i].y)
+    {
+      game->dead = TRUE;
+      return;
+    }
+  }
+
   int x = game->head->x;
   int y = game->head->y;
   if (x < 0)
