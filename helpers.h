@@ -7,6 +7,11 @@
 
 #define Helpers_H
 
+#ifndef Snake_H
+#include "snake.h"
+
+#endif
+
 typedef struct
 {
     EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
@@ -29,13 +34,9 @@ enum Directions
 
 typedef struct
 {
-    int score;
     UINT32 seed;
-    BOOLEAN dead;
-    Pos *head;
-    enum Directions direction;
-    Pos body[100];
     Pos *fruit;
+    Snake *snake;
 } Game;
 
 /**

@@ -12,48 +12,6 @@
 // GOP video buffer
 EFI_GRAPHICS_OUTPUT_BLT_PIXEL *vidbuf;
 
-VOID UpdateDirection(IN EFI_SIMPLE_TEXT_INPUT_PROTOCOL *stip, IN EFI_INPUT_KEY *inputKey, OUT enum Directions *direction)
-{
-  if (EFI_ERROR(gBS->CheckEvent(stip->WaitForKey)))
-    return;
-
-  stip->ReadKeyStroke(stip, inputKey);
-
-  if (inputKey->UnicodeChar == 'w' || inputKey->ScanCode == 0x01)
-    *direction = UP;
-  else if (inputKey->UnicodeChar == 'a' || inputKey->ScanCode == 0x04)
-    *direction = LEFT;
-  else if (inputKey->UnicodeChar == 's' || inputKey->ScanCode == 0x02)
-    *direction = DOWN;
-  else if (inputKey->UnicodeChar == 'd' || inputKey->ScanCode == 0x03)
-    *direction = RIGHT;
-}
-
-VOID UpdateLocation(OUT Game *game)
-{
-  for (int i = game->score - 1; i > 0; i--)
-  {
-    game->body[i] = game->body[i - 1];
-  }
-  game->body[0] = *game->head;
-
-  switch (game->direction)
-  {
-  case UP:
-    --game->head->y;
-    break;
-  case LEFT:
-    --game->head->x;
-    break;
-  case DOWN:
-    ++game->head->y;
-    break;
-  case RIGHT:
-    ++game->head->x;
-    break;
-  }
-}
-
 VOID EFIAPI GameLoop(
     IN EFI_EVENT Event,
     IN VOID *Context)
@@ -63,51 +21,52 @@ VOID EFIAPI GameLoop(
   Game *game = ((GameContext *)Context)->game;
   int width = ((GameContext *)Context)->width;
   int height = ((GameContext *)Context)->height;
+  Snake *snake = game->snake;
 
   // Update the frame
   paint_board(protocols->gop, game, width, height, vidbuf);
 
   // If the player is dead, don't update the game's state
-  if (game->dead)
+  if (snake->dead)
     return;
 
   // Update the snake's location
-  UpdateLocation(game);
+  UpdateLocation(game->snake);
 
   // Check if the snake had eaten the fruit
   if (
-      game->head->x == game->fruit->x &&
-      game->head->y == game->fruit->y)
+      snake->head->x == game->fruit->x &&
+      snake->head->y == game->fruit->y)
   {
-    ++game->score;
+    ++snake->score;
     SpawnFruit(game->fruit, &game->seed);
   }
 
   // Check for the snake's collision with its body
-  for (int i = 0; i < game->score; i++)
+  for (int i = 0; i < snake->score; i++)
   {
-    if (game->head->x == game->body[i].x &&
-        game->head->y == game->body[i].y)
+    if (snake->head->x == snake->body[i].x &&
+        snake->head->y == snake->body[i].y)
     {
-      game->dead = TRUE;
+      snake->dead = TRUE;
       return;
     }
   }
 
   // Check for the snake's collision with its head.
-  int x = game->head->x;
-  int y = game->head->y;
+  int x = snake->head->x;
+  int y = snake->head->y;
   if (x < 0)
-    game->head->x = 0;
+    snake->head->x = 0;
   else if (x > 24)
-    game->head->x = 24;
+    snake->head->x = 24;
   else if (y < 0)
-    game->head->y = 0;
+    snake->head->y = 0;
   else if (y > 24)
-    game->head->y = 24;
+    snake->head->y = 24;
   else
     return;
-  game->dead = TRUE;
+  snake->dead = TRUE;
 }
 
 EFI_STATUS
@@ -181,7 +140,7 @@ UefiMain(
   while (1)
   {
     // Check for user input constantly
-    UpdateDirection(protocols->stip, &inputKey, &game->direction);
+    UpdateDirection(protocols->stip, &inputKey, &game->snake->direction);
   }
 
   return EFI_SUCCESS;

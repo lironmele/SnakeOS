@@ -61,18 +61,26 @@ EFI_STATUS SetupGame(Game **game)
         return status;
     }
 
-    // Create variable for game pointer for better readability
+    // Create variables for game pointer and snake pointer for better readability
     Game *game_ptr = *game;
+    Snake *snake_ptr = game_ptr->snake;
 
-    status = AllocatePoolEx(sizeof(Pos) * 100, (VOID **)&game_ptr->body);
+    status = AllocatePoolEx(sizeof(Snake), (VOID **)&game_ptr->snake);
     if (EFI_ERROR(status))
     {
-        Print(L"Can't allocate pool for game struct.\n");
+        Print(L"Failed to allocate pool for snake struct");
+        return status;
+    }
+
+    status = AllocatePoolEx(sizeof(Pos) * 100, (VOID **)&snake_ptr->body);
+    if (EFI_ERROR(status))
+    {
+        Print(L"Failed to allocate pool for snake's body struct.\n");
         return status;
     }
 
     // Setup the player's starting position
-    status = AllocatePoolEx(sizeof(Pos), (VOID **)&game_ptr->head);
+    status = AllocatePoolEx(sizeof(Pos), (VOID **)&snake_ptr->head);
     if (EFI_ERROR(status))
     {
         Print(L"Can't allocate pool for player's Pos struct.\n");
@@ -80,21 +88,21 @@ EFI_STATUS SetupGame(Game **game)
     }
     else
     {
-        game_ptr->head->x = 15;
-        game_ptr->head->y = 15;
+        snake_ptr->head->x = 15;
+        snake_ptr->head->y = 15;
     }
 
     // Generate a random seed for future random generation
     game_ptr->seed = RandomInitSeed();
 
     // Initialize the player to be alive
-    game_ptr->dead = FALSE;
+    snake_ptr->dead = FALSE;
 
     // The player's starting direction is right.
-    game_ptr->direction = RIGHT;
+    snake_ptr->direction = RIGHT;
 
     // Start the score at 0
-    game_ptr->score = 0;
+    snake_ptr->score = 0;
 
     // Setup the fruit in a random starting position
 

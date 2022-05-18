@@ -2,9 +2,11 @@
 
 EFI_STATUS paint_board(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, Game *game, int width, int height, EFI_GRAPHICS_OUTPUT_BLT_PIXEL *vidbuf)
 {
+    Snake *snake = game->snake;
+
     // Change the snake's color based on its state
     EFI_GRAPHICS_OUTPUT_BLT_PIXEL snake_color = GREEN;
-    if (game->dead == TRUE)
+    if (snake->dead == TRUE)
         snake_color = BLACK;
 
     // Calculate each tile's pixel count
@@ -15,12 +17,12 @@ EFI_STATUS paint_board(EFI_GRAPHICS_OUTPUT_PROTOCOL *gop, Game *game, int width,
     fill(gop, WHITE, vidbuf);
 
     // paint head
-    draw_rect(gop, game->head->x * width_pixel, game->head->y * height_pixel, width_pixel, height_pixel, snake_color, vidbuf);
+    draw_rect(gop, snake->head->x * width_pixel, snake->head->y * height_pixel, width_pixel, height_pixel, snake_color, vidbuf);
 
     // paint body
-    for (UINT32 i = 0; i < game->score; i++)
+    for (UINT32 i = 0; i < snake->score; i++)
     {
-        draw_rect(gop, game->body[i].x * width_pixel, game->body[i].y * height_pixel, width_pixel, height_pixel, snake_color, vidbuf);
+        draw_rect(gop, snake->body[i].x * width_pixel, snake->body[i].y * height_pixel, width_pixel, height_pixel, snake_color, vidbuf);
     }
 
     // paint fruit
