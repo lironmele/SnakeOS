@@ -58,18 +58,23 @@ VOID EFIAPI GameLoop(
     IN EFI_EVENT Event,
     IN VOID *Context)
 {
+  // Setup variables for better readability
   Protocols *protocols = ((GameContext *)Context)->protocols;
   Game *game = ((GameContext *)Context)->game;
   int width = ((GameContext *)Context)->width;
   int height = ((GameContext *)Context)->height;
 
-  paint_board(protocols->gop, vidbuf, game, width, height);
+  // Update the frame
+  paint_board(protocols->gop, game, width, height, vidbuf);
 
+  // If the player is dead, don't update the game's state
   if (game->dead)
     return;
 
+  // Update the snake's location
   UpdateLocation(game);
 
+  // Check if the snake had eaten the fruit
   if (
       game->head->x == game->fruit->x &&
       game->head->y == game->fruit->y)
@@ -78,6 +83,7 @@ VOID EFIAPI GameLoop(
     SpawnFruit(game->fruit, &game->seed);
   }
 
+  // Check for the snake's collision with its body
   for (int i = 0; i < game->score; i++)
   {
     if (game->head->x == game->body[i].x &&
@@ -88,6 +94,7 @@ VOID EFIAPI GameLoop(
     }
   }
 
+  // Check for the snake's collision with its head.
   int x = game->head->x;
   int y = game->head->y;
   if (x < 0)
@@ -155,6 +162,7 @@ UefiMain(
   context->width = width;
   context->height = height;
 
+  // Create a new event for the game loop function
   gBS->CreateEvent(
       EVT_TIMER | EVT_NOTIFY_SIGNAL,
       TPL_NOTIFY,
@@ -162,6 +170,7 @@ UefiMain(
       context,
       &context->PeriodicTimer);
 
+  // Set a timer for 0.125 milliseconds for the gameloop
   gBS->SetTimer(
       context->PeriodicTimer,
       TimerPeriodic,
@@ -171,6 +180,7 @@ UefiMain(
 
   while (1)
   {
+    // Check for user input constantly
     UpdateDirection(protocols->stip, &inputKey, &game->direction);
   }
 
