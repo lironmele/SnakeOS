@@ -109,7 +109,6 @@ UefiMain(
     IN EFI_HANDLE ImageHandle,
     IN EFI_SYSTEM_TABLE *SystemTable)
 {
-  // Define
   EFI_STATUS status;
 
   Protocols *protocols;
@@ -134,24 +133,23 @@ UefiMain(
   UINT32 width = protocols->gop->Mode->Info->HorizontalResolution;
   UINT32 height = protocols->gop->Mode->Info->VerticalResolution;
 
-  status = gBS->AllocatePool(
-      EfiBootServicesData,
-      width * height * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL),
-      (VOID **)&vidbuf);
+  status = AllocatePoolEx(width * height * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL), (VOID **)&vidbuf);
   if (EFI_ERROR(status))
   {
     Print(L"Can't allocate pool for video buffer.\n");
     return status;
   }
 
-  Print(L"Started game loop\n");
+  Print(L"Started game loop.\n");
 
   GameContext *context;
-  gBS->AllocatePool(
-      EfiBootServicesData,
-      sizeof(GameContext),
-      (VOID **)&context);
+  status = AllocatePoolEx(sizeof(GameContext), (VOID **)&context);
+  if (EFI_ERROR(status))
+  {
+    Print(L"Failed to allocate pool for GameContext structure.\n");
+  }
 
+  // Assign all relevant field to context
   context->game = game;
   context->protocols = protocols;
   context->width = width;
@@ -169,14 +167,11 @@ UefiMain(
       TimerPeriodic,
       EFI_TIMER_PERIOD_MILLISECONDS(125));
 
-  EFI_INPUT_KEY *inputKey;
-  gBS->AllocatePool(
-      EfiBootServicesData,
-      sizeof(EFI_INPUT_KEY),
-      (VOID **)&inputKey);
+  EFI_INPUT_KEY inputKey;
+
   while (1)
   {
-    update_direction(&game->direction, protocols->stip, inputKey);
+    update_direction(&game->direction, protocols->stip, &inputKey);
   }
 
   return EFI_SUCCESS;
