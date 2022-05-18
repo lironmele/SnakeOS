@@ -22,8 +22,6 @@
 
 #endif
 
-VOID update_direction(enum Directions *direction, EFI_SIMPLE_TEXT_INPUT_PROTOCOL *stip, EFI_INPUT_KEY *inputKey);
-
 typedef struct
 {
   UINTN Signature;
@@ -33,6 +31,41 @@ typedef struct
   UINT32 width;
   UINT32 height;
 } GameContext;
+
+/**
+  A function to check if the user has pressed their keyboard.
+  If the user did, the function would find out which key was
+  pressed and adjust the direction accordingly.
+
+  @param[in] stip           A pointer to the Text Input protocol, used to get the user's input.
+  @param[in] inputKey       A pointer to store the newly pressed key inside.
+
+  @param[out] direction     A pointer to a Directions enum which contains the player wants to go.
+
+**/
+VOID UpdateDirection(IN EFI_SIMPLE_TEXT_INPUT_PROTOCOL *stip, IN EFI_INPUT_KEY *inputKey, OUT enum Directions *direction);
+
+/**
+  A function that's supposed to run every frame.
+  Updates the snake's head based on the direction
+  and moves the body towards the head.
+
+  @param[in] game           A pointer to the game's structure, which contains the snake's information.
+**/
+VOID UpdateLocation(OUT Game *game);
+
+/**
+  A function that is supposed to run every frame.
+  Houses the game's logic.
+
+  @param[out]  Event        The pointer to the newly created event if the call succeeds; undefined
+                                otherwise.
+  @param[in]   Context      The pointer to the notification function's context; corresponds to parameter
+                                Context in the notification function.
+**/
+VOID EFIAPI GameLoop(
+    IN EFI_EVENT Event,
+    IN VOID *Context);
 
 /**
   The user Entry Point for Application. The user code starts with this function

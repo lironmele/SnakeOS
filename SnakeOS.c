@@ -12,7 +12,7 @@
 // GOP video buffer
 EFI_GRAPHICS_OUTPUT_BLT_PIXEL *vidbuf;
 
-VOID update_direction(enum Directions *direction, EFI_SIMPLE_TEXT_INPUT_PROTOCOL *stip, EFI_INPUT_KEY *inputKey)
+VOID UpdateDirection(IN EFI_SIMPLE_TEXT_INPUT_PROTOCOL *stip, IN EFI_INPUT_KEY *inputKey, OUT enum Directions *direction)
 {
   if (EFI_ERROR(gBS->CheckEvent(stip->WaitForKey)))
     return;
@@ -29,7 +29,7 @@ VOID update_direction(enum Directions *direction, EFI_SIMPLE_TEXT_INPUT_PROTOCOL
     *direction = RIGHT;
 }
 
-VOID update_location(Game *game)
+VOID UpdateLocation(OUT Game *game)
 {
   for (int i = game->score - 1; i > 0; i--)
   {
@@ -68,14 +68,14 @@ VOID EFIAPI GameLoop(
   if (game->dead)
     return;
 
-  update_location(game);
+  UpdateLocation(game);
 
   if (
       game->head->x == game->fruit->x &&
       game->head->y == game->fruit->y)
   {
     ++game->score;
-    spawn_fruit(game->fruit, &game->seed);
+    SpawnFruit(game->fruit, &game->seed);
   }
 
   for (int i = 0; i < game->score; i++)
@@ -112,7 +112,7 @@ UefiMain(
   EFI_STATUS status;
 
   Protocols *protocols;
-  status = get_protocols(&protocols);
+  status = SetupProtocols(&protocols);
   if (EFI_ERROR(status))
   {
     Print(L"Failed to load protocols. GOODBYE!\n");
@@ -120,7 +120,7 @@ UefiMain(
   }
 
   Game *game;
-  status = setup_game(&game);
+  status = SetupGame(&game);
   if (EFI_ERROR(status))
   {
     Print(L"Faild to setup the game. GOODBYE!\n");
@@ -171,7 +171,7 @@ UefiMain(
 
   while (1)
   {
-    update_direction(&game->direction, protocols->stip, &inputKey);
+    UpdateDirection(protocols->stip, &inputKey, &game->direction);
   }
 
   return EFI_SUCCESS;

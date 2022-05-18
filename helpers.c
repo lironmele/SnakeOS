@@ -17,7 +17,7 @@ EFI_STATUS AllocatePoolEx(IN UINTN Size, OUT VOID **Buffer)
     return EFI_SUCCESS;
 }
 
-EFI_STATUS get_protocols(Protocols **protocols)
+EFI_STATUS SetupProtocols(Protocols **protocols)
 {
     Print(L"Loading protocols\n");
 
@@ -48,7 +48,7 @@ EFI_STATUS get_protocols(Protocols **protocols)
     return EFI_SUCCESS;
 }
 
-EFI_STATUS setup_game(Game **game)
+EFI_STATUS SetupGame(Game **game)
 {
     Print(L"Setting up game\n");
 
@@ -106,7 +106,7 @@ EFI_STATUS setup_game(Game **game)
     }
     else
     {
-        spawn_fruit(game_ptr->fruit, &game_ptr->seed);
+        SpawnFruit(game_ptr->fruit, &game_ptr->seed);
     }
 
     return EFI_SUCCESS;
@@ -123,7 +123,7 @@ UINT32 RandomInitSeed(VOID)
     return Seed;
 }
 
-VOID spawn_fruit(Pos *fruit_pos, UINT32 *seed)
+VOID SpawnFruit(Pos *fruit_pos, UINT32 *seed)
 {
     *seed -= 7;
     fruit_pos->x = (*seed * 3) % 25;
